@@ -1,20 +1,21 @@
 import requests #为了请求网站
-import time #耗时计算
+import time #耗时计算,延迟
 from bs4 import BeautifulSoup #为了从网站中抓取需要的部分
 import os #为了将图片写到本地
-#user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36 Edg/87.0.664.75
+import socket
+
+#url='https://konachan.net/post?page='
+headers={
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36 Edg/87.0.664.75'
+}
 t=time.time()
-page = '1' #页数
-url = "https://konachan.net/post?page=" + page + '&tags='
-text = requests.get(url).text
-soup = BeautifulSoup(text)
-#print(soup)
-#div = soup.find_all('a', class_ = 'directlink')
-div = soup.find_all('li',style = 'width: 170px;')
-#print(div,div2)
-#div = soup.find_all('span', class_ = 'directlink')
-#str_a = BeautifulSoup(str(div[0]))
-#a = str_a.find_all('a')
+page=1 #默认第一页
+nP=1 #默认继续获取图片
+late=3 #延迟
+number=0 #重试次数
+#situation=0 #为了最后执行while
+#socket.setdefaulttimeout(10)
+
 path = r'C:\Users\Juice\Desktop\pic'
 
 if not os.path.exists(path):
@@ -23,25 +24,58 @@ if not os.path.exists(path):
 else:
     print('目录已经存在。')
 
-def save_img(id,pixel,img_url):  #保存图片
-    img = requests.get(img_url)
-    name = id +'('+pixel+')'+'.jpg'
-    f = open(path+'\\'+name, 'ab')
-    f.write(img.content)
-    print(name, '图片保存成功。')
-    f.close()
-#number=0
-for i in div:
-    #skip = 0
-    # number=number+1
-    img_url=i.contents[1].get('href')
-    id = i.get('id')
-    pixel = i.contents[1].contents[1].string
-    #print(id,img_url,pixel)
-    #for n in os.listdir(path):
-    if id +'('+pixel+')'+'.jpg' in os.listdir(path):
-        #print(id +'('+pixel+')'+'.jpg' in os.listdir(path))
-        print(id,'已存在。')
-    else:
-        save_img(id, pixel, img_url)
-print('time:',time.time()-t)
+def save_img(id,pixel,img_url,number): #保存图片函数
+    try:
+        img = requests.get(url=img_url,headers=headers)
+        name = id +'('+pixel+')'+'.jpg'
+        f = open(path+'\\'+name, 'ab')
+        f.write(img.content)
+        print(name, '图片保存成功。')
+        f.close()
+    except:
+        number = number + 1
+        if number>3:
+            print('频繁操作。')
+            exit(-1)
+        save_img(id,pixel,img_url,number)
+
+
+def konachan(page, number):
+    page=str(page)
+    url = "https://konachan.net/post?page=" + page
+    try:
+        text = requests.get(url=url,headers=headers).text
+        # print(soup)
+    except:
+        number = number + 1
+        if number > 3:
+            print('频繁操作。')
+            exit(-1)
+        #time.sleep(late)
+        print('try again.')
+        konachan(page,number)
+
+    soup = BeautifulSoup(text, features="lxml")
+    div = soup.find_all('li', style='width: 170px;')
+    for i in div:
+        img_url=i.contents[1].get('href') #图片链接
+        id = i.get('id') #图片id
+        pixel = i.contents[1].contents[1].string #分辨率
+        #print(id,img_url,pixel)
+        if id +'('+pixel+')'+'.jpg' in os.listdir(path): #判断图片是否存在
+            print(id, '已存在。')
+            nP=0
+        else:
+            save_img(id, pixel, img_url,number)
+
+if __name__ == "__main__":
+    konachan(page,number)
+    time.sleep(late)
+    while nP == 1:
+        print('自动从下一页获取。')
+        page = page + 1
+        konachan(page,number)
+
+#time.sleep(late)
+#socket.close()
+print('time:',int(time.time()-t))
