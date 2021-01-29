@@ -11,10 +11,11 @@ headers={
 t=time.time()
 page=1 #默认第一页
 nP=1 #默认继续获取图片
-late=3 #延迟
+late=5 #延迟
 number=0 #重试次数
-#situation=0 #为了最后执行while
-#socket.setdefaulttimeout(10)
+if socket.setdefaulttimeout(10):
+    print('pass.')
+    exit(-1)
 
 path = r'C:\Users\Juice\Desktop\pic'
 
@@ -34,13 +35,16 @@ def save_img(id,pixel,img_url,number): #保存图片函数
         f.close()
     except:
         number = number + 1
-        if number>3:
+        if number>5:
             print('频繁操作。')
             exit(-1)
+        print('try save.',number)
         save_img(id,pixel,img_url,number)
 
 
 def konachan(page, number):
+    global text
+    global nP
     page=str(page)
     url = "https://konachan.net/post?page=" + page
     try:
@@ -52,9 +56,8 @@ def konachan(page, number):
             print('频繁操作。')
             exit(-1)
         #time.sleep(late)
-        print('try again.')
+        print('try again.',number)
         konachan(page,number)
-
     soup = BeautifulSoup(text, features="lxml")
     div = soup.find_all('li', style='width: 170px;')
     for i in div:
@@ -66,6 +69,7 @@ def konachan(page, number):
             print(id, '已存在。')
             nP=0
         else:
+            number=0
             save_img(id, pixel, img_url,number)
 
 if __name__ == "__main__":
