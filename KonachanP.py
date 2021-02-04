@@ -1,8 +1,8 @@
-import requests #为了请求网站
-import time #耗时计算,延迟
-from bs4 import BeautifulSoup #为了从网站中抓取需要的部分
-import os #为了将图片写到本地
-import socket
+import requests
+import time
+from bs4 import BeautifulSoup
+import os
+#import socket
 
 #url='https://konachan.net/post?page='
 headers={
@@ -13,10 +13,11 @@ page=1 #默认第一页
 nP=1 #默认继续获取图片
 late=5 #延迟
 number=0 #重试次数
+'''
 if socket.setdefaulttimeout(10):
     print('pass.')
     exit(-1)
-
+'''
 path = r'C:\Users\Juice\Desktop\pic'
 
 if not os.path.exists(path):
